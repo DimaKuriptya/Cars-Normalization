@@ -1,4 +1,4 @@
-IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = N'normalized')IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = N'normalized')
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = N'normalized')
 BEGIN
     EXEC('CREATE SCHEMA normalized'); 
 END

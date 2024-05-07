@@ -1,14 +1,10 @@
+from datetime import datetime
 import openpyxl
 import pathlib
 import pandas as pd
-import pyodbc
-from datetime import datetime
-import socket
 import sqlalchemy
 from sqlalchemy import text
-
-
-engine = sqlalchemy.create_engine(r'mssql+pyodbc://Dima\ADMIN/normalization?trusted_connection=yes&driver=ODBC Driver 17 for SQL Server')
+from settings import engine
 
 
 def prepare_database():
@@ -28,10 +24,10 @@ def load_to_database(df: pd.DataFrame, table_name: str, connection: sqlalchemy.E
     try:
         df.to_sql(table_name, schema='normalized', con=connection, if_exists='append', index=False)
     except Exception as e:
-        print(f'Unable to load the dataframe into table {table_name}: {e}')
+        print(f'Unable to load the dataframe into {table_name} table: {e}')
 
 
-def validate_date(raw_date):
+def validate_date(raw_date: str | datetime):
     try:
         if isinstance(raw_date, str):
             date_obj = datetime.strptime(raw_date, "%d/%m/%Y")
@@ -46,7 +42,7 @@ def validate_date(raw_date):
     return ready_date
 
 
-def build_df(row, id):
+def build_df(row, id: int):
     data = {}
     data['id'] = id
     data['brand'] = row[0].value
@@ -64,11 +60,11 @@ def build_df(row, id):
     return data
 
 
-def load_company_table(df):
+def load_company_table(df: pd.DataFrame):
     table_name = 'Company'
 
     try:
-        country_df = pd.read_sql(sql=f"SELECT id, nicename FROM normalized.Country", con=engine)
+        country_df = pd.read_sql(sql="SELECT id, nicename FROM normalized.Country", con=engine)
     except Exception as e:
         print('Unable to get countries: ' + e)
 
@@ -83,9 +79,9 @@ def load_company_table(df):
         finally:
             conn.exec_driver_sql(f"SET IDENTITY_INSERT [normalized].[{table_name}] OFF")
 
-def load_engine_type_table(df):
+def load_engine_type_table(df: pd.DataFrame):
     try:
-        engine_df = pd.read_sql(sql=f"SELECT id, type FROM normalized.Engine", con=engine)
+        engine_df = pd.read_sql(sql="SELECT id, type FROM normalized.Engine", con=engine)
     except Exception as e:
         print('Unable to get engine types: ' + e)
 
@@ -99,7 +95,8 @@ def load_engine_type_table(df):
     engine_type_df = pd.DataFrame(engine_type_data)
     load_to_database(engine_type_df, 'EngineType')
 
-def load_model_table(df):
+
+def load_model_table(df: pd.DataFrame):
     models_data = []
 
     for _, row in df.iterrows():
@@ -110,7 +107,7 @@ def load_model_table(df):
     load_to_database(model_df, 'Model')
 
 
-def load_founder_table(df):
+def load_founder_table(df: pd.DataFrame):
     founders_data = []
 
     for _, row in df.iterrows():
@@ -121,7 +118,7 @@ def load_founder_table(df):
     load_to_database(founder_df, 'Founder')
 
 
-def load_operating_income_table(df):
+def load_operating_income_table(df: pd.DataFrame):
     income_data = []
 
     for _, row in df.iterrows():
@@ -133,11 +130,11 @@ def load_operating_income_table(df):
     load_to_database(operating_income_df, 'OperatingIncome')
 
 
-def load_headquarter_table(df):
+def load_headquarter_table(df: pd.DataFrame):
     headquarters_data = []
 
     try:
-        country_df = pd.read_sql(sql=f"SELECT id, nicename FROM normalized.Country", con=engine)
+        country_df = pd.read_sql(sql="SELECT id, nicename FROM normalized.Country", con=engine)
     except Exception as e:
         print('Unable to get countries: ' + e)
 
@@ -149,22 +146,25 @@ def load_headquarter_table(df):
     load_to_database(headquarters_df, 'Headquarter')
 
 
-def main():
-    url = pathlib.Path(__file__).parent / 'Table for Normalization.xlsx'
+def get_df_from_excel(url):
     workbook = openpyxl.load_workbook(url)
     worksheet = workbook.active
 
     start_row = 5
     rows = worksheet.iter_rows(min_row=start_row)
-
-
     total_data = []
+
     for id, row in enumerate(rows):
         row_df = build_df(row, id)
         total_data.append(row_df)
 
-
     df = pd.DataFrame(total_data)
+    return df
+
+
+def main():
+    url = pathlib.Path(__file__).parent / 'xlsx_files/Table for Normalization.xlsx'
+    df = get_df_from_excel(url)
 
     prepare_database()
 
@@ -175,4 +175,6 @@ def main():
     load_headquarter_table(df.loc[:, ['id', 'headquarters']])
     load_engine_type_table(df.loc[:, ['id', 'engine_types']])
 
-main()
+
+if __name__ == '__main__':
+    main()
