@@ -1,5 +1,5 @@
-SET IDENTITY_INSERT [normalized].[country] ON
-INSERT INTO [normalized].[country] (id, iso, name, nicename, iso3, numcode, phonecode) VALUES
+SET IDENTITY_INSERT [normalized].[Country] ON
+INSERT INTO [normalized].[Country] (id, iso, name, nicename, iso3, numcode, phonecode) VALUES
 (1, 'AF', 'AFGHANISTAN', 'Afghanistan', 'AFG', 4, 93),
 (2, 'AL', 'ALBANIA', 'Albania', 'ALB', 8, 355),
 (3, 'DZ', 'ALGERIA', 'Algeria', 'DZA', 12, 213),
@@ -238,4 +238,4 @@ INSERT INTO [normalized].[country] (id, iso, name, nicename, iso3, numcode, phon
 (237, 'YE', 'YEMEN', 'Yemen', 'YEM', 887, 967),
 (238, 'ZM', 'ZAMBIA', 'Zambia', 'ZMB', 894, 260),
 (239, 'ZW', 'ZIMBABWE', 'Zimbabwe', 'ZWE', 716, 263);
-SET IDENTITY_INSERT [normalized].[country] OFF
+SET IDENTITY_INSERT [normalized].[Country] OFF

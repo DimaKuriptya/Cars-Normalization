@@ -1,8 +1,7 @@
-IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = N'normalized')
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = N'normalized')IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = N'normalized')
 BEGIN
     EXEC('CREATE SCHEMA normalized'); 
 END
-GO
 
 IF NOT EXISTS (SELECT * FROM sys.objects 
                WHERE object_id = OBJECT_ID(N'normalized.Country')
@@ -19,7 +18,6 @@ BEGIN
         CONSTRAINT PK_COUNTRY PRIMARY KEY (id),
     )
 END
-GO
 
 IF NOT EXISTS (SELECT * FROM sys.objects 
                WHERE object_id = OBJECT_ID(N'normalized.Company')
@@ -36,7 +34,6 @@ BEGIN
         CONSTRAINT FK_COMPANY_REFERENCE_COUNTRY FOREIGN KEY (country_id) REFERENCES [normalized].[Country] (id),
     )
 END
-GO
 
 IF NOT EXISTS (SELECT * FROM sys.objects 
                WHERE object_id = OBJECT_ID(N'normalized.Model')
@@ -50,7 +47,6 @@ BEGIN
         CONSTRAINT FK_MODEL_REFERENCE_COMPANY FOREIGN KEY (company_id) REFERENCES [normalized].[Company] (id),
     )
 END
-GO
 
 IF NOT EXISTS (SELECT * FROM sys.objects 
                WHERE object_id = OBJECT_ID(N'normalized.Headquarter')
@@ -66,7 +62,6 @@ BEGIN
         CONSTRAINT FK_HEADQUARTER_REFERENCE_COUNTRY FOREIGN KEY (country_id) REFERENCES [normalized].[Country] (id),
     )
 END
-GO
 
 IF NOT EXISTS (SELECT * FROM sys.objects 
                WHERE object_id = OBJECT_ID(N'normalized.Engine')
@@ -74,11 +69,10 @@ IF NOT EXISTS (SELECT * FROM sys.objects
 BEGIN
     CREATE TABLE [normalized].[Engine] (
         id INT IDENTITY(1, 1),
-        type NVARCHAR(80) NOT NULL,
+        type NVARCHAR(80) NOT NULL UNIQUE,
         CONSTRAINT PK_ENGINE PRIMARY KEY (id),
     )
 END
-GO
 
 IF NOT EXISTS (SELECT * FROM sys.objects 
                WHERE object_id = OBJECT_ID(N'normalized.EngineType')
@@ -92,7 +86,6 @@ BEGIN
         CONSTRAINT FK_ENGINE_TYPE_REFERENCE_ENGINE FOREIGN KEY (engine_id) REFERENCES [normalized].[Engine] (id),
     )
 END
-GO
 
 IF NOT EXISTS (SELECT * FROM sys.objects 
                WHERE object_id = OBJECT_ID(N'normalized.Founder')
@@ -101,11 +94,11 @@ BEGIN
     CREATE TABLE [normalized].[Founder] (
         id INT IDENTITY(1, 1),
         company_id INT NOT NULL,
+        full_name NVARCHAR(120) NOT NULL,
         CONSTRAINT PK_FOUNDER PRIMARY KEY (id),
         CONSTRAINT FK_FOUNDER_REFERENCE_COMPANY FOREIGN KEY (company_id) REFERENCES [normalized].[Company] (id),
     )
 END
-GO
 
 IF NOT EXISTS (SELECT * FROM sys.objects 
                WHERE object_id = OBJECT_ID(N'normalized.OperatingIncome')
@@ -114,9 +107,8 @@ BEGIN
     CREATE TABLE [normalized].[OperatingIncome] (
         company_id INT,
         year INT,
-        income INT NOT NULL
+        income BIGINT NOT NULL
         CONSTRAINT PK_ENGINETYPE PRIMARY KEY (company_id, year),
         CONSTRAINT FK_OPERATING_INCOME_REFERENCE_COMPANY FOREIGN KEY (company_id) REFERENCES [normalized].[Company] (id),
     )
 END
-GO
