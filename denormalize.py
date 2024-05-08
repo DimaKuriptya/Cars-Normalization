@@ -1,9 +1,9 @@
-from datetime import datetime
 import pathlib
 import pandas as pd
-import sqlalchemy
 from sqlalchemy import text
+from pandas.errors import MergeError
 from settings import engine
+from utils import Loader
 
 
 def prepare_database() -> None:
@@ -18,14 +18,20 @@ def prepare_database() -> None:
 
 def merge_with_country_df(df: pd.DataFrame) -> pd.DataFrame:
     country_df = pd.read_sql(sql='SELECT id, nicename FROM [normalized].[Country]', con=engine)
-    df = df.merge(country_df, left_on='country_id', right_on='id', how='left')
+    try:
+        df = df.merge(country_df, left_on='country_id', right_on='id', how='left')
+    except MergeError as e:
+        print('Unable to merge: ' + e)
     df = df.rename(columns={'id_x': 'id', 'nicename': 'country'})
 
     return df.drop(columns=['country_id', 'id_y'])
 
 
 def merge_with_company_df(company_df: pd.DataFrame, other_df: pd.DataFrame) -> pd.DataFrame:
-    company_df = company_df.merge(other_df, left_on='id', right_on='company_id', how='left')
+    try:
+        company_df = company_df.merge(other_df, left_on='id', right_on='company_id', how='left')
+    except MergeError as e:
+        print('Unable to merge: ' + e)
     company_df = company_df.rename(columns={'id_x': 'id'})
 
     return company_df.drop(columns=['company_id'])
@@ -35,7 +41,7 @@ def get_company_df() -> pd.DataFrame:
     normalized_company_df = pd.read_sql(sql='SELECT * FROM [normalized].[Company]', con=engine)
     company_df = merge_with_country_df(normalized_company_df)
     company_df['foundation'] = company_df['foundation'].apply(lambda x: x.strftime("%d.%m.%Y"))
-    company_df['ev'] = company_df['ev'].apply(lambda x: 'Y' if True else 'N')
+    company_df['ev'] = company_df['ev'].apply(lambda x: 'Y' if x else 'N')
 
     return company_df
 
@@ -87,36 +93,31 @@ def get_operating_income_df() -> pd.DataFrame:
     return operating_income_df
 
 
-def collect_data_into_single_df() -> pd.DataFrame:
+def extract_data() -> pd.DataFrame:
     company_df = get_company_df()
 
-    df_to_merge = {}
-    df_to_merge['model_df'] = get_model_df()
-    df_to_merge['headquarter_df'] = get_headquarter_df()
-    df_to_merge['engine_type_df'] = get_engine_type_df()
-    df_to_merge['founder_df'] = get_founder_df()
-    df_to_merge['operating_income_df'] = get_operating_income_df()
+    df_list = []
+    df_list.append(get_model_df())
+    df_list.append(get_headquarter_df())
+    df_list.append(get_engine_type_df())
+    df_list.append(get_founder_df())
+    df_list.append(get_operating_income_df())
 
-    for value in df_to_merge.values():
+    return company_df, df_list
+
+
+def denormalize_pipeline() -> None:
+    prepare_database()
+
+    company_df, df_list = extract_data()
+
+    for value in df_list:
         company_df = merge_with_company_df(company_df=company_df, other_df=value)
-
     company_df = company_df.drop(columns=['id'])
 
-    return company_df
-
-
-def load_denormalized_data(df):
-    try:
-        df.to_sql('Company', schema='denormalized', con=engine, if_exists='append', index=False)
-    except Exception as e:
-        print(f'Unable to load the dataframe into Company table: {e}')
-
-
-def main() -> None:
-    prepare_database()
-    df = collect_data_into_single_df()
-    load_denormalized_data(df)
+    l = Loader(engine, schema='denormalized')
+    l.load_to_database(company_df, 'Company')
 
 
 if __name__ == '__main__':
-    main()
+    denormalize_pipeline()

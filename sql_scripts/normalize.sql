@@ -8,7 +8,7 @@ IF NOT EXISTS (SELECT * FROM sys.objects
                   AND type in (N'U'))
 BEGIN
     CREATE TABLE [normalized].[Country] (
-        id INT IDENTITY(1, 1),
+        id INT IDENTITY(0, 1),
         iso CHAR(2) NOT NULL,
         name NVARCHAR(80) NOT NULL,
         nicename NVARCHAR(80) NOT NULL,
@@ -24,7 +24,7 @@ IF NOT EXISTS (SELECT * FROM sys.objects
                   AND type in (N'U'))
 BEGIN
     CREATE TABLE [normalized].[Company] (
-        id INT IDENTITY(1, 1),
+        id INT IDENTITY(0, 1),
         brand NVARCHAR(80) NOT NULL,
         ceo NVARCHAR(100) NOT NULL,
         country_id INT NOT NULL,
@@ -40,7 +40,7 @@ IF NOT EXISTS (SELECT * FROM sys.objects
                   AND type in (N'U'))
 BEGIN
     CREATE TABLE [normalized].[Model] (
-        id INT IDENTITY(1, 1),
+        id INT IDENTITY(0, 1),
         company_id INT NOT NULL,
         name NVARCHAR(80) NOT NULL,
         CONSTRAINT PK_MODEL PRIMARY KEY (id),
@@ -53,7 +53,7 @@ IF NOT EXISTS (SELECT * FROM sys.objects
                   AND type in (N'U'))
 BEGIN
     CREATE TABLE [normalized].[Headquarter] (
-        id INT IDENTITY(1, 1),
+        id INT IDENTITY(0, 1),
         company_id INT NOT NULL,
         country_id INT NOT NULL,
         city NVARCHAR(100) NOT NULL,
@@ -68,7 +68,7 @@ IF NOT EXISTS (SELECT * FROM sys.objects
                   AND type in (N'U'))
 BEGIN
     CREATE TABLE [normalized].[Engine] (
-        id INT IDENTITY(1, 1),
+        id INT IDENTITY(0, 1),
         type NVARCHAR(80) NOT NULL UNIQUE,
         CONSTRAINT PK_ENGINE PRIMARY KEY (id),
     )
@@ -92,7 +92,7 @@ IF NOT EXISTS (SELECT * FROM sys.objects
                   AND type in (N'U'))
 BEGIN
     CREATE TABLE [normalized].[Founder] (
-        id INT IDENTITY(1, 1),
+        id INT IDENTITY(0, 1),
         company_id INT NOT NULL,
         full_name NVARCHAR(120) NOT NULL,
         CONSTRAINT PK_FOUNDER PRIMARY KEY (id),

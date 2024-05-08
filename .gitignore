@@ -1,3 +1,9 @@
+# Temporary files
+~$*.*
+
+# Ariflow logs
+logs/
+
 # Config
 *.conf
 
