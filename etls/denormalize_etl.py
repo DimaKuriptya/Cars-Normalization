@@ -2,12 +2,12 @@ import pathlib
 import pandas as pd
 from sqlalchemy import text
 from pandas.errors import MergeError
-from settings import engine
-from utils import Loader
+from config.settings import engine
+from etls.utils import Loader
 
 
 def prepare_database() -> None:
-    denormalize_url = pathlib.Path(__file__).parent / 'sql_scripts/denormalize.sql'
+    denormalize_url = pathlib.Path(__file__).parent.parent / 'sql_scripts/denormalize.sql'
 
     with engine.connect() as con:
         with open(denormalize_url, encoding='utf-8') as file:
@@ -106,18 +106,14 @@ def extract_data() -> pd.DataFrame:
     return company_df, df_list
 
 
-def denormalize_pipeline() -> None:
-    prepare_database()
-
-    company_df, df_list = extract_data()
-
+def transform_data(main_df, df_list):
     for value in df_list:
-        company_df = merge_with_company_df(company_df=company_df, other_df=value)
-    company_df = company_df.drop(columns=['id'])
+        main_df = merge_with_company_df(company_df=main_df, other_df=value)
+    main_df = main_df.drop(columns=['id'])
 
+    return main_df
+
+
+def load_data(df, table_name):
     l = Loader(engine, schema='denormalized')
-    l.load_to_database(company_df, 'Company')
-
-
-if __name__ == '__main__':
-    denormalize_pipeline()
+    l.load_to_database(df, table_name)

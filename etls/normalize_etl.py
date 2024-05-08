@@ -4,14 +4,14 @@ import openpyxl
 import pandas as pd
 from sqlalchemy import text
 
-from settings import engine
-from utils import Normalizer, Loader
+from config.settings import engine
+from etls.utils import Normalizer, Loader
 
 
 def prepare_database() -> None:
-    normalize_url = pathlib.Path(__file__).parent / 'sql_scripts/normalize.sql'
-    countries_url = pathlib.Path(__file__).parent / 'sql_scripts/countries.sql'
-    engines_url = pathlib.Path(__file__).parent / 'sql_scripts/engines.sql'
+    normalize_url = pathlib.Path(__file__).parent.parent / 'sql_scripts/normalize.sql'
+    countries_url = pathlib.Path(__file__).parent.parent / 'sql_scripts/countries.sql'
+    engines_url = pathlib.Path(__file__).parent.parent / 'sql_scripts/engines.sql'
 
     with engine.connect() as con:
         for path in [normalize_url, countries_url, engines_url]:
@@ -68,12 +68,7 @@ def extract_from_excel(url) -> pd.DataFrame:
     return df
 
 
-def normalize_pipeline() -> None:
-    prepare_database()
-
-    url = pathlib.Path(__file__).parent / 'xlsx_files/Table for Normalization.xlsx'
-    df = extract_from_excel(url)
-
+def transform_data(df) -> dict:
     n = Normalizer(engine)
     transformed_df = {}
 
@@ -84,11 +79,11 @@ def normalize_pipeline() -> None:
     transformed_df['Headquarter'] = n.transform_headquarter_df(df.loc[:, ['id', 'headquarters']])
     transformed_df['EngineType'] = n.transform_engine_type_df(df.loc[:, ['id', 'engine_types']])
 
+    return transformed_df
+
+
+def load_data(df_dict: dict[pd.DataFrame]) -> None:
     l = Loader(engine, schema='normalized')
 
-    for table_name, df in transformed_df.items():
+    for table_name, df in df_dict.items():
         l.load_to_database(df, table_name)
-
-
-if __name__ == '__main__':
-    normalize_pipeline()
