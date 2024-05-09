@@ -6,11 +6,11 @@ https://dbdiagram.io/d/Normalization-66381fc05b24a634d090a57e
 ### Total size of normalized data
 Reserved Space: 648KB
 
-Used Space: 80KB
+Used Space: 168KB
 ### Total size of denormalized data
 Reserved Space: 144KB
 
-Used Space: 24KB
+Used Space: 32KB
 ## System Setup (Windows)
 1. Clone the repository:
    ```bash
