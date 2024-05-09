@@ -52,16 +52,24 @@ def fetch_excel_row(row: tuple, row_id: int) -> dict:
     return data
 
 
+def get_target_company_id():
+    current_id = int(pd.read_sql(sql="SELECT IDENT_CURRENT('normalized.Company') AS value;", con=engine).value[0])
+    target_id = current_id + 1
+    return target_id
+
+
 def extract_from_excel(url) -> pd.DataFrame:
     workbook = openpyxl.load_workbook(url)
     worksheet = workbook.active
+
+    target_id = get_target_company_id()
 
     start_row = 5
     rows = worksheet.iter_rows(min_row=start_row)
     total_data = []
 
     for row_id, row in enumerate(rows):
-        row_df = fetch_excel_row(row, row_id)
+        row_df = fetch_excel_row(row, row_id + target_id)
         total_data.append(row_df)
 
     df = pd.DataFrame(total_data)
