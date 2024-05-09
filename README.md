@@ -2,6 +2,15 @@
 This project provides functionality for normalizing and denormalizing the data collected from the xlsx file. All the data is uploaded to SQL Server database.
 ## Entity Relationship Diagram (ERD)
 https://dbdiagram.io/d/Normalization-66381fc05b24a634d090a57e
+## DB Size
+### Total size of normalized data
+Reserved Space: 648KB
+
+Used Space: 80KB
+### Total size of denormalized data
+Reserved Space: 144KB
+
+Used Space: 24KB
 ## System Setup (Windows)
 1. Clone the repository:
    ```bash
