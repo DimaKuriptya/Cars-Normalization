@@ -1,18 +1,20 @@
 import pandas as pd
 from pandas.errors import DatabaseError, MergeError
+from sqlalchemy import text
+from config.settings import engine
 
 
 class Loader:
     """
     Class is used to load df data to the database
     """
-    def __init__(self, engine, schema) -> None:
-        self.engine = engine
+    def __init__(self, conn, schema) -> None:
+        self.conn = conn
         self.schema = schema
 
     def load_to_database(self, df: pd.DataFrame, table_name: str) -> None:
         try:
-            df.to_sql(table_name, schema=self.schema, con=self.engine, if_exists='append', index=False)
+            df.to_sql(table_name, schema=self.schema, con=engine, if_exists='append', index=False)
         except DatabaseError as e:
             print(f'Unable to load the dataframe into {table_name} table: {e}')
 
@@ -21,11 +23,12 @@ class Normalizer:
     """
     Class is used to transform and normalize df data
     """
-    def __init__(self, engine) -> None:
-        self.engine = engine
+    def __init__(self, conn) -> None:
+        self.conn = conn
 
     def transform_company_df(self, df: pd.DataFrame) -> None:
-        country_df = pd.read_sql(sql='SELECT id, nicename FROM [normalized].[Country]', con=self.engine)
+        country_df = self.get_country_df()
+
         try:
             df = df.merge(country_df, left_on='country', right_on='nicename', how='left')
         except MergeError as e:
@@ -37,9 +40,11 @@ class Normalizer:
 
     def transform_engine_type_df(self, df: pd.DataFrame) -> None:
         try:
-            engine_df = pd.read_sql(sql="SELECT id, type FROM normalized.Engine", con=self.engine)
+            query = text("SELECT id, type FROM normalized.Engine")
+            query_result = self.conn.execute(query)
+            engine_df = pd.DataFrame(query_result.all(), columns=query_result.keys())
         except DatabaseError as e:
-            print('Unable to get engine types: ' + e)
+            print("Unable to get engine types: " + e)
 
         engine_type_data = []
 
@@ -84,11 +89,7 @@ class Normalizer:
 
     def transform_headquarter_df(self, df: pd.DataFrame) -> None:
         headquarters_data = []
-
-        try:
-            country_df = pd.read_sql(sql="SELECT id, nicename FROM normalized.Country", con=self.engine)
-        except DatabaseError as e:
-            print('Unable to get countries: ' + e)
+        country_df = self.get_country_df()
 
         for _, row in df.iterrows():
             row['headquarters'][-1] = country_df.loc[country_df['nicename'] == row['headquarters'][-1], 'id'].values[0] # Transforming str country to foreign key
@@ -96,3 +97,12 @@ class Normalizer:
 
         headquarters_df = pd.DataFrame(headquarters_data)
         return headquarters_df
+    
+    def get_country_df(self):
+        try:
+            query = text("SELECT id, nicename FROM normalized.Country")
+            query_result = self.conn.execute(query)
+            country_df = pd.DataFrame(query_result.all(), columns=query_result.keys())
+        except DatabaseError as e:
+            print("Unable to get countries data: " + e)
+        return country_df

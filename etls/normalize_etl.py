@@ -8,17 +8,17 @@ from config.settings import engine
 from etls.utils import Normalizer, Loader
 
 
-def prepare_database() -> None:
+def prepare_database(engine) -> None:
     normalize_url = pathlib.Path(__file__).parent.parent / 'sql_scripts/normalize.sql'
     countries_url = pathlib.Path(__file__).parent.parent / 'sql_scripts/countries.sql'
     engines_url = pathlib.Path(__file__).parent.parent / 'sql_scripts/engines.sql'
 
-    with engine.connect() as con:
+    with engine.begin() as conn:
         for path in [normalize_url, countries_url, engines_url]:
             with open(path, encoding='utf-8') as file:
                 query = text(file.read())
-                con.execute(query)
-                con.commit()
+                conn.execute(query)
+        conn.commit()
 
 
 def validate_date(raw_date: str | datetime) -> str:
@@ -53,8 +53,14 @@ def fetch_excel_row(row: tuple, row_id: int) -> dict:
 
 
 def get_target_company_id():
-    current_id = int(pd.read_sql(sql="SELECT IDENT_CURRENT('normalized.Company') AS value;", con=engine).value[0])
-    target_id = current_id + 1
+    with engine.connect() as conn:
+        query = text("SELECT IDENT_CURRENT('normalized.Company') AS value;")
+        result = conn.execute(query).scalar()
+        current_id = int(result)
+
+    if current_id != 0:
+        current_id += 1
+    target_id = current_id
     return target_id
 
 
@@ -76,8 +82,8 @@ def extract_from_excel(url) -> pd.DataFrame:
     return df
 
 
-def transform_data(df) -> dict:
-    n = Normalizer(engine)
+def transform_data(conn, df) -> dict:
+    n = Normalizer(conn)
     transformed_df = {}
 
     transformed_df['Company'] = n.transform_company_df(df.loc[:, ['id', 'brand', 'ceo', 'country', 'foundation', 'ev']])
@@ -90,8 +96,8 @@ def transform_data(df) -> dict:
     return transformed_df
 
 
-def load_data(df_dict: dict[pd.DataFrame]) -> None:
-    l = Loader(engine, schema='normalized')
+def load_data(conn, df_dict: dict[pd.DataFrame]) -> None:
+    l = Loader(conn, schema='normalized')
 
     for table_name, df in df_dict.items():
         l.load_to_database(df, table_name)

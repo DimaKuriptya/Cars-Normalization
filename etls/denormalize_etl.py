@@ -114,6 +114,6 @@ def transform_data(main_df, df_list):
     return main_df
 
 
-def load_data(df, table_name):
+def load_data(engine, df, table_name):
     l = Loader(engine, schema='denormalized')
     l.load_to_database(df, table_name)

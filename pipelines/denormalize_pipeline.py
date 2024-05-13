@@ -3,6 +3,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from etls.denormalize_etl import prepare_database, extract_data, transform_data, load_data
+from config.settings import engine
 
 
 def denormalize_pipeline() -> None:
@@ -12,7 +13,7 @@ def denormalize_pipeline() -> None:
 
     df = transform_data(company_df, df_list)
 
-    load_data(df, table_name='Company')
+    load_data(engine, df, table_name='Company')
 
 
 if __name__ == '__main__':
