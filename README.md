@@ -3,26 +3,26 @@ This project provides functionality for normalizing and denormalizing the data c
 ## Entity Relationship Diagram (ERD)
 https://dbdiagram.io/d/Normalization-66381fc05b24a634d090a57e
 ## DB Size
-### Total size of normalized data
+### Total size of normalized data:
 Reserved Space: 648KB
 
 Used Space: 168KB
-### Total size of denormalized data
+### Total size of denormalized data:
 Reserved Space: 144KB
 
 Used Space: 32KB
-## System Setup (Windows)
+## System Setup (Linux)
 1. Clone the repository:
    ```bash
     git clone https://github.com/DimaKuriptya/Cars-Normalization.git
    ```
 2. Create a virtual environment:
    ```bash
-    python -m venv venv
+    python3 -m venv venv
    ```
 3. Activate the virtual environment:
    ```bash
-    venv\Scripts\activate
+    source venv/bin/activate
    ```
 4. Install the dependencies:
    ```bash
@@ -31,16 +31,25 @@ Used Space: 32KB
 5. Create a file `config.conf` inside `config` folder. Fill the file by the folowing template:
 ```bash
 [db_connection]
-server = USER\SERVERNAME
-database = db_name
-driver = ODBC Driver 17 for SQL Server
+server = host.docker.internal
+database = normalization
+driver = ODBC Driver 18 for SQL Server
+username = sa
+password = your_password
 ```
-6. Install the chosen driver if necessary and create a database with the same name as in config.
-7. Run normalization script:
+6. Install the driver if necessary and create an SQL Server database with the same name as in config.
+7. Start the containers:
+
+   Run airflow-init:
    ```bash
-    python pipelines/normalize_pipeline.py
+     docker-compose up airflow-init
    ```
-8. Run denormalization script:
+
+   Wait for airflow-init container to finish its job and then run the following command:
+   ```
+   docker-compose up
+   ```
+8. Launch the Airflow web UI.
    ```bash
-    python pipelines/denormalize_pipeline.py
+    open http://localhost:8080
    ```
